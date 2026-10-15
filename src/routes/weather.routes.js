@@ -19,7 +19,7 @@ weatherRouter.get('/weather', async(req, res,next) => {
 
     res.json({
       data: weatherSummary,
-      attribution: 'Weather data is provided thanks to Open-Meteo'
+      attribution: 'Weather data by Open-Meteo.com (https://open-meteo.com/)'
     });
   } catch (error) {
 
@@ -46,7 +46,7 @@ weatherRouter.get('/compare', async(req, res,next) => {
         return {
           city: cities[index],
           ok:true,
-          data: result.value
+          weather: result.value
         };
       }
 
@@ -85,10 +85,28 @@ weatherRouter.get('/compare', async(req, res,next) => {
       }
     }
 
-    
+
     res.json({
-      data: cityResults,
-      attribution: 'Weather data provided thanks to Open-Meteo'
+      data: {
+        cities: cityResults,
+        summary: {
+          succeeded: successfulCities.length,
+          failed: cityResults.length - successfulCities.length,
+          warmest: warmest
+            ? {
+                city: warmest.weather.location.name,
+                temperatureC: warmest.weather.current.temperatureC
+              }
+            : null,
+            coldest: coldest
+              ? {
+                  city: coldest.weather.location.name,
+                  temperatureC: coldest.weather.current.temperatureC
+                }
+              : null
+        }
+      },
+        attribution: 'Weather data by Open-Meteo.com (https://open-meteo.com/)'
     });
 
   } catch (error) {
