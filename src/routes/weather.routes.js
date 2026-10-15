@@ -1,17 +1,69 @@
 import { Router } from 'express';
-
+import { parseCity, parseCities } from '../lib/validation.js';
+import { getCityWeather } from '../lib/weather.js';
 export const weatherRouter = Router();
 
+
 // TODO (you): GET /api/weather?city=Toronto
-// Validate with parseCity, get the summary with getCityWeather, and respond
+// Validate with parseCity,
+//  get the summary with getCityWeather, and 
+// respond
 // with { data, attribution }. Routes never call fetch themselves.
-weatherRouter.get('/weather', (req, res) => {
-  res.status(501).json({ error: { message: 'Not written yet: GET /api/weather' } });
+weatherRouter.get('/weather', async(req, res,next) => {
+
+    try {
+
+    const city = parseCity(req.query.city);
+
+    const weatherSummary = await getCityWeather(city);
+
+    res.json({
+      data: weatherSummary,
+      attribution: 'Weather data is provided thanks to Open-Meteo'
+    });
+  } catch (error) {
+
+    next(error);
+  }
 });
 
 // TODO (you): GET /api/compare?cities=Toronto,Vancouver,Halifax
-// Validate with parseCities, start every lookup at once with Promise.allSettled,
+// Validate with parseCities, 
+// start every lookup at once with Promise.allSettled,
 // then build the cities array and the summary described on the assignment page.
-weatherRouter.get('/compare', (req, res) => {
-  res.status(501).json({ error: { message: 'Not written yet: GET /api/compare' } });
+weatherRouter.get('/compare', async(req, res,next) => {
+    try {
+    const cities = parseCities(req.query.cities);
+
+    const results = await Promise.allSettled(
+      cities.map((city) => getCityWeather(city))
+    );
+
+
+
+    const cityResults = results.map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return {
+          city: cities[index],
+          data: result.value
+        };
+      }
+
+      return {
+        city: cities[index],
+        error: {
+          message: result.reason.message
+        }
+      };
+    });
+
+    res.json({
+      data: cityResults,
+      attribution: 'Weather data provided thanks to Open-Meteo'
+    });
+
+  } catch (error) {
+
+    next(error);
+  }
 });
