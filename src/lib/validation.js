@@ -14,7 +14,7 @@ export function parseCity(value) {
 
   return value.trim();
 }
-// comparison must be at least 2 cities, under 5
+// comparison must be 2 to 5 cities
 export function parseCities(value) {
   if (typeof value !== 'string' || value.trim() === '') {
     throw new HttpError(400, 'Invalid query', {
@@ -30,7 +30,7 @@ export function parseCities(value) {
     cities.some((city) => city.length < 2 || city.length > 60)
   ) {
     throw new HttpError(400, 'Invalid query', {
-      cities: 'provide 2 to 5 city names, at least 2 characters but less than 60'
+      cities: 'provide 2 to 5 city names, 2 to 60 characters each'
     });
   }
 
