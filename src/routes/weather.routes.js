@@ -45,18 +45,47 @@ weatherRouter.get('/compare', async(req, res,next) => {
       if (result.status === 'fulfilled') {
         return {
           city: cities[index],
+          ok:true,
           data: result.value
         };
       }
 
       return {
         city: cities[index],
+        ok:false,
         error: {
+          status: result.reason.status ?? 500,
           message: result.reason.message
         }
       };
     });
+    const successfulCities = cityResults.filter(
+      (city) => city.ok
+    );
+    let warmest = null;
+    let coldest = null;
 
+    for (const city of successfulCities) {
+      const temperature = city.weather.current.temperatureC;
+
+
+
+      if (
+        warmest === null ||
+        temperature > warmest.weather.current.temperatureC
+      ) {
+        warmest = city;
+      }
+
+      if (
+        coldest === null ||
+        temperature < coldest.weather.current.temperatureC
+      ) {
+        coldest = city;
+      }
+    }
+
+    
     res.json({
       data: cityResults,
       attribution: 'Weather data provided thanks to Open-Meteo'
