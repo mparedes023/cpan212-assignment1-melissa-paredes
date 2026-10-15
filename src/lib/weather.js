@@ -11,7 +11,8 @@ const weatherCache=createCache(config.cacheTtlSeconds);
 // the forecast, build the summary, store it, and return it with cached: false.
 // On a hit, return the stored summary with cached: true.
 export async function getCityWeather(city) {
-  const cachedWeatherSummary=weatherCache.get(city);
+  const cacheKey = city.trim().toLowerCase();
+  const cachedWeatherSummary=weatherCache.get(cacheKey);
 
   if (cachedWeatherSummary!==undefined){
     return {
@@ -28,25 +29,47 @@ export async function getCityWeather(city) {
   );
 
   const current = forecast.current;
+  const daily = forecast.daily;
 
   const summary = {
-    city: location,
+    location: {
+      name: location.name,
+      region: location.region ?? null,
+      country: location.country ?? null,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      timezone: location.timezone
+    },
     current: {
-      temperature: current.temperature_2m,
-      apparentTemperature: current.apparent_temperature,
-      humidity: current.relative_humidity_2m,
-      windSpeed: current.wind_speed_10m,
+      time: current.time,
+      temperatureC: current.temperature_2m,
+      feelsLikeC: current.apparent_temperature,
+      humidityPercent: current.relative_humidity_2m,
+      windKmh: current.wind_speed_10m,
       weatherCode: current.weather_code,
-      description: describeWeatherCode(current.weather_code)
+      conditions: describeWeatherCode(current.weather_code)
+
+      
     },
 
-    daily: forecast.daily
+    daily: daily.time.slice(0, 3).map((date, index) => ({
+      date,
+      minC: daily.temperature_2m_min[index],
+      maxC: daily.temperature_2m_max[index],
+      precipitationChancePercent:
+        daily.precipitation_probability_max[index] ?? null,
+      weatherCode: daily.weather_code[index],
+      conditions: describeWeatherCode(daily.weather_code[index])
+    })),
+    fetchedAt: new Date().toISOString(),
+    
   };
 
-  weatherCache.set(city, summary);
+  weatherCache.set(cacheKey, summary);
 
   return {
     ...summary,
+    
     cached: false
   };
 }
